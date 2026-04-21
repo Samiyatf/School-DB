@@ -3,73 +3,69 @@
 <head>
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Secure Records Database</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>College AMS Dashboard</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header>
-    <h1>Secure Records Database</h1>
-  </header>
-  <main>
-    <section class="controls">
-      <input type="text" id="searchInput" placeholder="Search records..." />
-      <button id="addRecordBtn">Add Record</button>
-      <button id="exportBtn">Export JSON</button>
-    </section>
-    <section class="table-section">
-      <table id="recordsTable">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Data goes here -->
-        </tbody>
-      </table>
-      <div id="emptyMessage" style="display:none;">No records found.</div>
-    </section>
-    <!-- Modal for Add/Edit -->
-    <div id="recordModal" class="modal">
-      <div class="modal-content">
-        <span id="closeModal" class="close">&times;</span>
-        <h2 id="modalTitle">Add Record</h2>
-        <form id="recordForm">
-          <label>
-            Name:
-            <input type="text" name="name" required />
-          </label>
-          <label>
-            Email:
-            <input type="email" name="email" required />
-          </label>
-          <label>
-            Role:
-            <select name="role" required>
-              <option value="">Select a role</option>
-              <option value="Student">Student</option>
-              <option value="Teacher">Teacher</option>
-              <option value="Administrator">Administrator</option>
-            </select>
-          </label>
-          <input type="hidden" name="id" />
-          <div class="modal-actions">
-            <button type="submit" id="saveBtn">Save</button>
-            <button type="button" id="cancelBtn">Cancel</button>
-          </div>
-        </form>
-      </div>
-    </div>
-    <!-- End Modal -->
-  </main>
-  <footer>
-    <div>© 2026 Secure Database UI</div>
-  </footer>
-  <script src="script.js"></script>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <h2>College AMS</h2>
+      <nav>
+        <a href="index.html" class="active">Dashboard</a>
+        <a href="manager.html?entity=colleges">Colleges</a>
+        <a href="manager.html?entity=departments">Departments</a>
+        <a href="manager.html?entity=students">Students</a>
+        <a href="manager.html?entity=student_accounts">Student Accounts</a>
+        <a href="manager.html?entity=instructors">Instructors</a>
+        <a href="manager.html?entity=instructor_profiles">Instructor Profiles</a>
+        <a href="manager.html?entity=courses">Courses</a>
+        <a href="manager.html?entity=classrooms">Classrooms</a>
+        <a href="manager.html?entity=sections">Sections</a>
+        <a href="manager.html?entity=enrollments">Enrollments</a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <header class="page-header">
+        <h1>Dashboard</h1>
+        <button id="exportAllBtn">Export All Data JSON</button>
+      </header>
+
+      <section class="dashboard-grid">
+        <a class="card" href="manager.html?entity=colleges">Manage Colleges</a>
+        <a class="card" href="manager.html?entity=departments">Manage Departments</a>
+        <a class="card" href="manager.html?entity=students">Manage Students</a>
+        <a class="card" href="manager.html?entity=student_accounts">Manage Student Accounts</a>
+        <a class="card" href="manager.html?entity=instructors">Manage Instructors</a>
+        <a class="card" href="manager.html?entity=instructor_profiles">Manage Instructor Profiles</a>
+        <a class="card" href="manager.html?entity=courses">Manage Courses</a>
+        <a class="card" href="manager.html?entity=classrooms">Manage Classrooms</a>
+        <a class="card" href="manager.html?entity=sections">Manage Sections</a>
+        <a class="card" href="manager.html?entity=enrollments">Manage Enrollments</a>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    document.getElementById("exportAllBtn").addEventListener("click", async () => {
+      try {
+        const res = await fetch("http://localhost:3000/api/export/all");
+        const data = await res.json();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "college_management_db_export.json";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        alert("Failed to export all data.");
+        console.error(err);
+      }
+    });
+  </script>
 </body>
 </html>

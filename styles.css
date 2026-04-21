@@ -1,254 +1,209 @@
-﻿:root {
-  --primary: #246bfd;
-  --secondary: #072f6b;
-  --success: #2eb67d;
-  --danger: #dc3545;
-  --background: #f4f8fb;
-  --card: #fff;
-  --text: #222;
-  --tableBorder: #dbeafe;
-}
-
-* {
+﻿* {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  background: var(--background);
-  font-family: 'Segoe UI', Arial, sans-serif;
-  color: var(--text);
+  font-family: Arial, sans-serif;
+  background: #f4f6fb;
+  color: #222;
 }
 
-header {
-  background: var(--primary);
-  color: #fff;
-  padding: 1.2rem 0;
-  box-shadow: 0 2px 4px rgba(36, 107, 253, 0.07);
-  text-align: center;
-}
-
-main {
-  max-width: 900px;
-  margin: 2rem auto 0;
-  background: var(--card);
-  border-radius: 10px;
-  box-shadow: 0 3px 18px rgba(36, 107, 253, 0.08);
-  padding: 2rem 2.5rem 2.5rem;
-}
-
-footer {
-  margin: 2em 0 0;
-  background: #f1f1f1;
-  text-align: center;
-  padding: 1em 0;
-  color: #888;
-  font-size: 0.9em;
-}
-
-section.controls {
+.app-shell {
   display: flex;
-  gap: 0.8rem;
-  justify-content: flex-end;
-  align-items: center;
-  margin-bottom: 1.5rem;
+  min-height: 100vh;
 }
 
-section.controls input[type="text"] {
-  flex: 1;
-  padding: 0.65rem;
-  border-radius: 5px;
-  border: 1px solid #bbcfea;
-  font-size: 1rem;
-}
-
-section.controls button {
-  padding: 0.65rem 1.2rem;
-  border: none;
-  background: var(--primary);
+.sidebar {
+  width: 240px;
+  background: #1f235a;
   color: white;
-  border-radius: 6px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.18s;
-  font-size: 1rem;
+  padding: 20px;
 }
 
-section.controls button:hover {
-  background: var(--secondary);
+.sidebar h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar nav a {
+  color: white;
+  text-decoration: none;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: transparent;
+}
+
+.sidebar nav a:hover,
+.sidebar nav a.active {
+  background: #2f357f;
+}
+
+.content {
+  flex: 1;
+  padding: 24px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.controls {
+  margin-bottom: 20px;
+}
+
+.controls input {
+  width: 100%;
+  max-width: 420px;
+  padding: 12px;
+  border: 1px solid #c9d2e3;
+  border-radius: 8px;
+}
+
+button, .home-link {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
+  background: #2f6fed;
+  color: white;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+button:hover, .home-link:hover {
+  opacity: 0.92;
 }
 
 .table-section {
-  width: 100%;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
   overflow-x: auto;
-  margin-top: 0.7rem;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  background: var(--card);
+}
+
+thead {
+  background: #eef2fb;
 }
 
 th, td {
-  padding: 0.9rem 1.1rem;
-  border-bottom: 1px solid var(--tableBorder);
+  padding: 12px;
   text-align: left;
-  font-size: 1rem;
+  border-bottom: 1px solid #e3e7f0;
+  vertical-align: top;
 }
 
-th {
-  background: #eff4fa;
-  color: var(--secondary);
-  font-weight: 600;
-}
-
-tr:last-child td {
-  border-bottom: none;
-}
-
-td.actions {
+.actions {
   display: flex;
-  gap: 0.5em;
-}
-
-.action-btn {
-  padding: 0.4em 0.8em;
-  border: none;
-  border-radius: 4px;
-  color: #fff;
-  font-size: 0.95em;
-  cursor: pointer;
-  transition: background 0.17s;
+  gap: 8px;
 }
 
 .action-edit {
-  background: var(--success);
-}
-.action-edit:hover {
-  background: #129f5f;
-}
-.action-delete {
-  background: var(--danger);
-}
-.action-delete:hover {
-  background: #ad2332;
+  background: #2fb36f;
 }
 
-#emptyMessage {
-  text-align: center;
-  color: #888;
-  font-size: 1.1em;
-  margin-top: 16px;
+.action-delete {
+  background: #e24d4d;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  text-decoration: none;
+  color: #222;
+  font-weight: bold;
+}
+
+.card:hover {
+  background: #f7f9ff;
 }
 
 .modal {
   display: none;
   position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
   z-index: 1000;
-  padding-top: 90px;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(36, 107, 253, 0.07);
 }
 
 .modal-content {
   background: white;
-  margin: auto;
-  border-radius: 10px;
-  padding: 2.5em 2em 2em;
+  max-width: 600px;
+  width: 92%;
+  margin: 60px auto;
+  padding: 20px;
+  border-radius: 12px;
   position: relative;
-  width: 100%;
-  max-width: 400px;
-  box-shadow: 0 4px 32px rgba(36, 107, 253, 0.17);
-  animation: fadeModal 0.2s;
-}
-
-@keyframes fadeModal {
-  from { transform: translateY(-30px); opacity: 0;}
-  to { transform: translateY(0); opacity: 1;}
 }
 
 .close {
-  color: #aaa;
   position: absolute;
-  top: 18px;
-  right: 22px;
-  font-size: 23px;
-  font-weight: bold;
+  right: 16px;
+  top: 10px;
+  font-size: 28px;
   cursor: pointer;
 }
 
-.close:hover {
-  color: #246bfd;
+#recordForm {
+  display: grid;
+  gap: 14px;
 }
 
 #recordForm label {
-  display: block;
-  margin-top: 1em;
-  font-weight: 500;
+  display: grid;
+  gap: 6px;
+  font-weight: 600;
 }
 
-#recordForm input, #recordForm select {
-  width: 100%;
-  padding: 0.55em;
-  margin-top: 0.38em;
-  border-radius: 5px;
-  border: 1px solid #c8dfff;
-  font-size: 1em;
-}
-
-#recordForm input[readonly] {
-  background: #f7f7fb;
-  color: #bbb;
+#recordForm input,
+#recordForm select {
+  padding: 10px;
+  border: 1px solid #c9d2e3;
+  border-radius: 8px;
 }
 
 .modal-actions {
   display: flex;
+  gap: 10px;
   justify-content: flex-end;
-  gap: 0.5em;
-  margin-top: 1.8em;
 }
 
-.modal-actions button {
-  min-width: 95px;
-  padding: 0.6em 1em;
-  border-radius: 5px;
-  font-size: 1em;
-  font-weight: 500;
-}
-
-#saveBtn {
-  background: var(--primary);
-  color: #fff;
-  border: none;
-}
-
-#saveBtn:hover {
-  background: var(--secondary);
-}
-
-#cancelBtn {
-  background: #f2f2f2;
-  color: #333;
-  border: none;
-}
-
-#cancelBtn:hover {
-  background: #eee;
-}
-
-@media (max-width: 600px) {
-  main {
-    padding: 1em 0.6em 1.7em;
+@media (max-width: 900px) {
+  .app-shell {
+    flex-direction: column;
   }
-  th, td {
-    padding: 0.6em 0.6em;
-    font-size: 0.92em;
-  }
-  .modal-content {
-    padding: 1.2em 0.4em 1em;
+
+  .sidebar {
+    width: 100%;
   }
 }

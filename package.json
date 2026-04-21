@@ -1,0 +1,26 @@
+{
+  "name": "school-db",
+  "version": "1.0.0",
+  "description": "This is a professional, interactive frontend-only web UI for a secure database application. It operates purely on mock JSON data for now, making it easy for future developers to plug into a real MySQL backend API.",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Samiyatf/School-DB.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Samiyatf/School-DB/issues"
+  },
+  "homepage": "https://github.com/Samiyatf/School-DB#readme",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "mysql2": "^3.22.2"
+  }
+}
