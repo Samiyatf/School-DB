@@ -88,3 +88,13 @@ py -m http.server 8000
 
 ### 7. Open the Application
 http://localhost:8000/login.html
+
+### Student View
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/42068054-2dc0-4617-8f32-46d56ede202d" width="700"/>
+</p>
+
+### Teacher View
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/1a0d1d61-f02d-4730-a603-d94acf51f7dd" width="700"/>
+</p>
