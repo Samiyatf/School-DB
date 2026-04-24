@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Course Database Manager</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Course Database Manager</h1>
+  </header>
+
+  <main>
+    <section class="controls">
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Search courses by ID, title, department, or credit hours..."
+      />
+      <button id="addRecordBtn">Add Course</button>
+    </section>
+
+    <section class="table-section">
+      <table id="recordsTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Course Title</th>
+            <th>Department</th>
+            <th>Credit Hours</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Course data goes here -->
+        </tbody>
+      </table>
+      <div id="emptyMessage" style="display:none;">No courses found.</div>
+    </section>
+
+    <div id="recordModal" class="modal">
+      <div class="modal-content">
+        <span id="closeModal" class="close">&times;</span>
+        <h2 id="modalTitle">Add Course</h2>
+
+        <form id="recordForm">
+          <input type="hidden" id="course_id" name="course_id" />
+
+          <label for="course_title">
+            Course Title:
+            <input type="text" id="course_title" name="course_title" required />
+          </label>
+
+          <label for="department_id">
+            Department:
+            <select id="department_id" name="department_id" required>
+              <option value="">Select a department</option>
+            </select>
+          </label>
+
+          <label for="credit_hours">
+            Credit Hours:
+            <input
+              type="number"
+              id="credit_hours"
+              name="credit_hours"
+              min="1"
+              required
+            />
+          </label>
+
+          <div class="modal-actions">
+            <button type="submit" id="saveBtn">Save</button>
+            <button type="button" id="cancelBtn">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div>© 2026 Course Database Manager</div>
+  </footer>
+
+  <script src="courses.js"></script>
+</body>
+</html>

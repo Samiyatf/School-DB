@@ -1,8 +1,8 @@
-﻿let students = [];
+let courses = [];
 let departments = [];
-let editStudentId = null;
+let editCourseId = null;
 
-const API_STUDENTS = "http://localhost:3000/api/students";
+const API_COURSES = "http://localhost:3000/api/courses";
 const API_DEPARTMENTS = "http://localhost:3000/api/departments";
 
 const recordsTableBody = document.querySelector("#recordsTable tbody");
@@ -15,11 +15,10 @@ const recordForm = document.getElementById("recordForm");
 const modalTitle = document.getElementById("modalTitle");
 const emptyMessage = document.getElementById("emptyMessage");
 
-const firstNameInput = document.getElementById("first_name");
-const lastNameInput = document.getElementById("last_name");
+const courseIdInput = document.getElementById("course_id");
+const courseTitleInput = document.getElementById("course_title");
 const departmentSelect = document.getElementById("department_id");
-const maxCoursesInput = document.getElementById("max_courses_allowed");
-const studentIdInput = document.getElementById("student_id");
+const creditHoursInput = document.getElementById("credit_hours");
 
 function escapeHtml(text) {
   return String(text || "").replace(/[&<>"']/g, c =>
@@ -45,76 +44,82 @@ async function apiRequest(url, options = {}) {
   return data;
 }
 
-function renderTable(studentList) {
+function renderTable(courseList) {
   recordsTableBody.innerHTML = "";
 
-  if (!studentList.length) {
+  if (!courseList.length) {
     emptyMessage.style.display = "block";
     return;
   }
 
   emptyMessage.style.display = "none";
 
-  studentList.forEach(student => {
+  courseList.forEach(course => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${student.student_id}</td>
-      <td>${escapeHtml(student.first_name)}</td>
-      <td>${escapeHtml(student.last_name)}</td>
-      <td>${escapeHtml(student.department_name)}</td>
-      <td>${student.max_courses_allowed}</td>
+      <td>${course.course_id}</td>
+      <td>${escapeHtml(course.course_title)}</td>
+      <td>${escapeHtml(course.department_name)}</td>
+      <td>${course.credit_hours}</td>
       <td class="actions">
-        <button class="action-btn action-edit" data-id="${student.student_id}">Edit</button>
-        <button class="action-btn action-delete" data-id="${student.student_id}">Delete</button>
+        <button class="action-btn action-edit" data-id="${course.course_id}">Edit</button>
+        <button class="action-btn action-delete" data-id="${course.course_id}">Delete</button>
       </td>
     `;
     recordsTableBody.appendChild(tr);
   });
 }
 
-function filterStudents(query) {
+function filterCourses(query) {
   const q = query.toLowerCase();
-  return students.filter(student =>
-    String(student.student_id).includes(q) ||
-    student.first_name.toLowerCase().includes(q) ||
-    student.last_name.toLowerCase().includes(q) ||
-    student.department_name.toLowerCase().includes(q) ||
-    String(student.max_courses_allowed).includes(q)
+
+  return courses.filter(course =>
+    String(course.course_id).includes(q) ||
+    course.course_title.toLowerCase().includes(q) ||
+    course.department_name.toLowerCase().includes(q) ||
+    String(course.credit_hours).includes(q)
   );
 }
 
 function refreshDisplay() {
-  renderTable(filterStudents(searchInput.value.trim()));
+  renderTable(filterCourses(searchInput.value.trim()));
 }
 
 async function loadDepartments() {
   departments = await apiRequest(API_DEPARTMENTS);
-  departmentSelect.innerHTML = departments
-    .map(d => `<option value="${d.department_id}">${escapeHtml(d.department_name)}</option>`)
-    .join("");
+
+  departmentSelect.innerHTML = `
+    <option value="">Select a department</option>
+    ${departments
+      .map(
+        dept =>
+          `<option value="${dept.department_id}">${escapeHtml(dept.department_name)}</option>`
+      )
+      .join("")}
+  `;
 }
 
-async function loadStudents() {
-  students = await apiRequest(API_STUDENTS);
+async function loadCourses() {
+  courses = await apiRequest(API_COURSES);
   refreshDisplay();
 }
 
-function openModal(mode, student = null) {
+function openModal(mode, course = null) {
   modal.style.display = "block";
   document.body.style.overflow = "hidden";
-  modalTitle.textContent = mode === "add" ? "Add Student" : "Edit Student";
+  modalTitle.textContent = mode === "add" ? "Add Course" : "Edit Course";
 
-  if (mode === "edit" && student) {
-    studentIdInput.value = student.student_id;
-    firstNameInput.value = student.first_name;
-    lastNameInput.value = student.last_name;
-    departmentSelect.value = student.department_id;
-    maxCoursesInput.value = student.max_courses_allowed;
-    editStudentId = student.student_id;
+  if (mode === "edit" && course) {
+    courseIdInput.value = course.course_id;
+    courseTitleInput.value = course.course_title;
+    departmentSelect.value = course.department_id;
+    creditHoursInput.value = course.credit_hours;
+    editCourseId = course.course_id;
   } else {
     recordForm.reset();
-    studentIdInput.value = "";
-    editStudentId = null;
+    courseIdInput.value = "";
+    editCourseId = null;
+    departmentSelect.value = "";
   }
 }
 
@@ -122,7 +127,7 @@ function closeModalUI() {
   modal.style.display = "none";
   document.body.style.overflow = "";
   recordForm.reset();
-  editStudentId = null;
+  editCourseId = null;
 }
 
 function handleAddRecord(e) {
@@ -131,16 +136,16 @@ function handleAddRecord(e) {
 }
 
 function handleEditRecord(id) {
-  const student = students.find(s => Number(s.student_id) === Number(id));
-  if (student) openModal("edit", student);
+  const course = courses.find(c => Number(c.course_id) === Number(id));
+  if (course) openModal("edit", course);
 }
 
 async function handleDeleteRecord(id) {
-  if (!confirm("Delete this student?")) return;
+  if (!confirm("Delete this course?")) return;
 
   try {
-    await apiRequest(`${API_STUDENTS}/${id}`, { method: "DELETE" });
-    await loadStudents();
+    await apiRequest(`${API_COURSES}/${id}`, { method: "DELETE" });
+    await loadCourses();
   } catch (error) {
     alert(error.message);
   }
@@ -150,27 +155,31 @@ async function handleSaveRecord(e) {
   e.preventDefault();
 
   const payload = {
-    first_name: firstNameInput.value.trim(),
-    last_name: lastNameInput.value.trim(),
+    course_title: courseTitleInput.value.trim(),
     department_id: Number(departmentSelect.value),
-    max_courses_allowed: Number(maxCoursesInput.value)
+    credit_hours: Number(creditHoursInput.value)
   };
 
+  if (!payload.course_title || !payload.department_id || !payload.credit_hours) {
+    alert("Please fill in all fields.");
+    return;
+  }
+
   try {
-    if (editStudentId === null) {
-      await apiRequest(API_STUDENTS, {
+    if (editCourseId === null) {
+      await apiRequest(API_COURSES, {
         method: "POST",
         body: JSON.stringify(payload)
       });
     } else {
-      await apiRequest(`${API_STUDENTS}/${editStudentId}`, {
+      await apiRequest(`${API_COURSES}/${editCourseId}`, {
         method: "PUT",
         body: JSON.stringify(payload)
       });
     }
 
     closeModalUI();
-    await loadStudents();
+    await loadCourses();
   } catch (error) {
     alert(error.message);
   }
@@ -198,9 +207,9 @@ window.addEventListener("click", e => {
 window.addEventListener("DOMContentLoaded", async () => {
   try {
     await loadDepartments();
-    await loadStudents();
+    await loadCourses();
   } catch (error) {
-    alert("Failed to load application data.");
+    alert("Failed to load course data.");
     console.error(error);
   }
 });
