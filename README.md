@@ -1,58 +1,90 @@
-﻿# Secure Database Semester Project (Frontend UI)
+# College AMS (Academic Management System)
 
-This is a professional, interactive frontend-only web UI for a secure database application. It operates purely on mock JSON data for now, making it easy for future developers to plug into a real MySQL backend API.
+A full-stack academic management system built with Node.js, Express, and MySQL. This application implements secure authentication, role-based access control, and dynamic data management for student and teacher workflows.
 
-## Features
+## Overview
 
-- **View, search, filter** records (mocked in data.json)
-- **Add, edit, delete** records interactively in the UI
-- **Export** current records view as JSON file
-- **Responsive, clean design**
-- **Well-commented, modular codebase**
+This project simulates a real-world academic system where users interact with structured data through a web interface. It demonstrates backend API development, database integration, and access control enforcement across different user roles.
+
+## Key Features
+
+- User authentication (login and registration)
+- Role-based access control (student vs teacher)
+- RESTful API built with Express
+- MySQL database integration
+- CRUD operations across academic entities
+- Protected routes with role enforcement
+- Student-restricted views with masked sensitive data (grades)
+- Shared UI with dynamic behavior based on user role
 
 ## Tech Stack
 
-- HTML5
-- CSS3 (no frameworks)
-- Vanilla JavaScript (no frameworks)
-- Mock data (see `data.json`)
+Frontend:
+- HTML
+- CSS
+- JavaScript
 
-## Folder Structure
+Backend:
+- Node.js
+- Express.js
 
-```
-.
-├── index.html
-├── styles.css
-├── script.js
-├── data.json
-└── README.md
-```
+Database:
+- MySQL (phpMyAdmin)
+
+Security:
+- bcryptjs (password hashing)
+- JSON Web Tokens (JWT)
+- dotenv (environment configuration)
+
+## System Design
+
+- Frontend communicates with backend via HTTP requests
+- Backend handles authentication, authorization, and database queries
+- MySQL stores relational data (students, courses, enrollments, etc.)
+- Role-based logic is enforced both on the frontend and backend
 
 ## Getting Started
 
-1. **Clone or download all files into a single folder.**
-2. Open `index.html` directly in your web browser.
-   - For file system security reasons, you may need to serve this directory with a simple HTTP server for `fetch("data.json")` to work. For example:
+### 1. Clone the Repository
+git clone https://github.com/Samiyatf/School-DB.git
+cd School-DB
 
-   ```
-   python3 -m http.server
-   ```
+### 2. Set Up the Database
+- Start Apache and MySQL in XAMPP
+- Open your browser and go to:
+  http://localhost/phpmyadmin
+- Create a database named:
+  college_management_db
+- Click Import and select:
+  college_management_db.sql
+- Click Go and wait for the success message
 
-   Then visit [http://localhost:8000](http://localhost:8000).
+### 3. Configure Environment Variables
+Create a .env file in the root directory and add:
 
-3. **Enjoy and modify the project as needed!**
+DB_HOST=127.0.0.1  
+DB_USER=root  
+DB_PASSWORD=  
+DB_NAME=college_management_db  
+PORT=3000  
 
-## Transitioning to a Backend
+### 4. Install Dependencies
+npm install
 
-- All data interactions (loading, adding, editing, deleting, exporting) are implemented in `script.js` using the `records` array, initially populated from `data.json`.
-- To plug in a real backend API, simply:
-  - Replace the fetch for `data.json` in `loadMockData()` with API calls.
-  - Update the CRUD handler functions to make requests to your backend server, then update the UI according to API responses.
+### 5. Run the Backend
+node server.js
 
-## Security Note
+You should see:
+Server running on http://localhost:3000
 
-- This frontend UI is for demonstration/development only—real security controls and input validation must be implemented server-side when connecting to the real (MySQL) backend!
+### 6. Run the Frontend
+Open a second terminal and run:
 
----
+python -m http.server 8000
 
-© 2026 Secure Database Project Team
+or:
+
+py -m http.server 8000
+
+### 7. Open the Application
+http://localhost:8000/login.html
