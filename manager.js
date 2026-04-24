@@ -14,6 +14,13 @@ const modalTitle = document.getElementById("modalTitle");
 const recordForm = document.getElementById("recordForm");
 const emptyMessage = document.getElementById("emptyMessage");
 
+const token = localStorage.getItem("token");
+const user = JSON.parse(localStorage.getItem("user"));
+
+if (!token || !user) {
+  window.location.href = "login.html";
+}
+
 let rows = [];
 let lookups = {};
 let editId = null;
@@ -34,6 +41,7 @@ const configs = {
       { name: "location", label: "Location", type: "text", required: true }
     ]
   },
+
   departments: {
     title: "Departments",
     idField: "department_id",
@@ -49,6 +57,7 @@ const configs = {
       { name: "department_name", label: "Department Name", type: "text", required: true }
     ]
   },
+
   students: {
     title: "Students",
     idField: "student_id",
@@ -68,6 +77,7 @@ const configs = {
       { name: "max_courses_allowed", label: "Max Courses Allowed", type: "number", required: true }
     ]
   },
+
   student_accounts: {
     title: "Student Accounts",
     idField: "account_id",
@@ -84,6 +94,7 @@ const configs = {
       { name: "password", label: "Password", type: "text", required: true }
     ]
   },
+
   instructors: {
     title: "Instructors",
     idField: "instructor_id",
@@ -101,6 +112,7 @@ const configs = {
       { name: "department_id", label: "Department", type: "select", required: true, lookup: "departments" }
     ]
   },
+
   instructor_profiles: {
     title: "Instructor Profiles",
     idField: "profile_id",
@@ -118,6 +130,7 @@ const configs = {
       { name: "rank_title", label: "Rank", type: "text", required: false }
     ]
   },
+
   courses: {
     title: "Courses",
     idField: "course_id",
@@ -135,6 +148,7 @@ const configs = {
       { name: "credit_hours", label: "Credit Hours", type: "number", required: true }
     ]
   },
+
   classrooms: {
     title: "Classrooms",
     idField: "classroom_id",
@@ -152,6 +166,7 @@ const configs = {
       { name: "capacity", label: "Capacity", type: "number", required: true }
     ]
   },
+
   sections: {
     title: "Sections",
     idField: "section_id",
@@ -173,6 +188,7 @@ const configs = {
       { name: "year", label: "Year", type: "number", required: true }
     ]
   },
+
   enrollments: {
     title: "Enrollments",
     idField: "enrollment_id",
@@ -200,11 +216,16 @@ function escapeHtml(text) {
 
 async function apiRequest(url, options = {}) {
   const response = await fetch(url, {
-    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      ...(options.headers || {})
+    },
     ...options
   });
 
   let data = null;
+
   try {
     data = await response.json();
   } catch {
@@ -218,9 +239,19 @@ async function apiRequest(url, options = {}) {
   return data;
 }
 
+function getSingularTitle(title) {
+  if (title.endsWith("ies")) return title.slice(0, -3) + "y";
+  if (title.endsWith("s")) return title.slice(0, -1);
+  return title;
+}
+
 function buildTableHead() {
   const config = configs[entity];
-  const ths = config.columns.map(col => `<th>${config.labels[col] || col}</th>`).join("");
+
+  const ths = config.columns
+    .map((col) => `<th>${config.labels[col] || col}</th>`)
+    .join("");
+
   tableHead.innerHTML = `<tr>${ths}<th>Actions</th></tr>`;
 }
 
@@ -236,16 +267,25 @@ function renderTable(list) {
 
   const config = configs[entity];
 
-  list.forEach(row => {
-    const cells = config.columns.map(col => `<td>${escapeHtml(row[col])}</td>`).join("");
+  list.forEach((row) => {
+    const cells = config.columns
+      .map((col) => `<td>${escapeHtml(row[col])}</td>`)
+      .join("");
+
+    const actions =
+      user.role === "teacher"
+        ? `<td class="actions">
+            <button class="action-edit" data-id="${row[config.idField]}">Edit</button>
+            <button class="action-delete" data-id="${row[config.idField]}">Delete</button>
+          </td>`
+        : `<td>View Only</td>`;
+
     const tr = document.createElement("tr");
     tr.innerHTML = `
       ${cells}
-      <td class="actions">
-        <button class="action-edit" data-id="${row[config.idField]}">Edit</button>
-        <button class="action-delete" data-id="${row[config.idField]}">Delete</button>
-      </td>
+      ${actions}
     `;
+
     tableBody.appendChild(tr);
   });
 }
@@ -254,9 +294,10 @@ function filterRows(query) {
   const q = query.toLowerCase();
   const config = configs[entity];
 
-  return rows.filter(row =>
-    config.columns.some(col => String(row[col] ?? "").toLowerCase().includes(q)) ||
-    String(row[config.idField] ?? "").includes(q)
+  return rows.filter((row) =>
+    config.columns.some((col) =>
+      String(row[col] ?? "").toLowerCase().includes(q)
+    ) || String(row[config.idField] ?? "").includes(q)
   );
 }
 
@@ -264,37 +305,64 @@ function refreshDisplay() {
   renderTable(filterRows(searchInput.value.trim()));
 }
 
+function getLookupKeys(item) {
+  const valueKey = Object.keys(item).find((key) => key.endsWith("_id"));
+  const labelKey = Object.keys(item).find((key) => key !== valueKey);
+
+  return { valueKey, labelKey };
+}
+
 function buildForm(record = null) {
   const config = configs[entity];
-  const html = config.fields.map(field => {
-    const value = record ? (record[field.name] ?? "") : "";
-    if (field.type === "select") {
-      const options = field.lookup
-        ? (lookups[field.lookup] || []).map(item => {
-            const valueKey = Object.keys(item).find(k => k.endsWith("_id"));
-            const labelKey = Object.keys(item).find(k => k !== valueKey);
-            return `<option value="${item[valueKey]}" ${String(item[valueKey]) === String(value) ? "selected" : ""}>${escapeHtml(item[labelKey])}</option>`;
-          }).join("")
-        : (field.options || []).map(opt => `<option value="${opt}" ${String(opt) === String(value) ? "selected" : ""}>${escapeHtml(opt || "None")}</option>`).join("");
+
+  const html = config.fields
+    .map((field) => {
+      const value = record ? record[field.name] ?? "" : "";
+
+      if (field.type === "select") {
+        const options = field.lookup
+          ? (lookups[field.lookup] || [])
+              .map((item) => {
+                const { valueKey, labelKey } = getLookupKeys(item);
+
+                return `<option value="${item[valueKey]}" ${
+                  String(item[valueKey]) === String(value) ? "selected" : ""
+                }>${escapeHtml(item[labelKey])}</option>`;
+              })
+              .join("")
+          : (field.options || [])
+              .map(
+                (opt) =>
+                  `<option value="${opt}" ${
+                    String(opt) === String(value) ? "selected" : ""
+                  }>${escapeHtml(opt || "None")}</option>`
+              )
+              .join("");
+
+        return `
+          <label>
+            ${field.label}
+            <select name="${field.name}" ${field.required ? "required" : ""}>
+              <option value="">Select</option>
+              ${options}
+            </select>
+          </label>
+        `;
+      }
 
       return `
         <label>
           ${field.label}
-          <select name="${field.name}" ${field.required ? "required" : ""}>
-            <option value="">Select</option>
-            ${options}
-          </select>
+          <input 
+            type="${field.type}" 
+            name="${field.name}" 
+            value="${escapeHtml(value)}" 
+            ${field.required ? "required" : ""} 
+          />
         </label>
       `;
-    }
-
-    return `
-      <label>
-        ${field.label}
-        <input type="${field.type}" name="${field.name}" value="${escapeHtml(value)}" ${field.required ? "required" : ""} />
-      </label>
-    `;
-  }).join("");
+    })
+    .join("");
 
   recordForm.innerHTML = `
     ${html}
@@ -310,7 +378,10 @@ function buildForm(record = null) {
 
 async function loadLookups() {
   const needed = new Set();
-  configs[entity].fields.forEach(f => { if (f.lookup) needed.add(f.lookup); });
+
+  configs[entity].fields.forEach((field) => {
+    if (field.lookup) needed.add(field.lookup);
+  });
 
   for (const lookupName of needed) {
     lookups[lookupName] = await apiRequest(`${API_BASE}/lookups/${lookupName}`);
@@ -323,8 +394,17 @@ async function loadRows() {
 }
 
 function openModal(mode, record = null) {
+  if (user.role !== "teacher") {
+    alert("Students have view-only access.");
+    return;
+  }
+
   modal.style.display = "block";
-  modalTitle.textContent = mode === "add" ? `Add ${configs[entity].title.slice(0, -1)}` : `Edit ${configs[entity].title.slice(0, -1)}`;
+  modalTitle.textContent =
+    mode === "add"
+      ? `Add ${getSingularTitle(configs[entity].title)}`
+      : `Edit ${getSingularTitle(configs[entity].title)}`;
+
   editId = record ? record[configs[entity].idField] : null;
   buildForm(record);
 }
@@ -338,12 +418,21 @@ function closeModalUI() {
 async function handleSaveRecord(e) {
   e.preventDefault();
 
+  if (user.role !== "teacher") {
+    alert("Students cannot modify records.");
+    return;
+  }
+
   const formData = new FormData(recordForm);
   const payload = {};
 
-  configs[entity].fields.forEach(field => {
+  configs[entity].fields.forEach((field) => {
     let value = formData.get(field.name);
-    if (field.type === "number") value = value === "" ? null : Number(value);
+
+    if (field.type === "number") {
+      value = value === "" ? null : Number(value);
+    }
+
     payload[field.name] = value;
   });
 
@@ -368,11 +457,18 @@ async function handleSaveRecord(e) {
 }
 
 async function handleDeleteRecord(id) {
+  if (user.role !== "teacher") {
+    alert("Students cannot delete records.");
+    return;
+  }
+
   if (!confirm("Delete this record?")) return;
+
   try {
     await apiRequest(`${API_BASE}/${configs[entity].endpoint}/${id}`, {
       method: "DELETE"
     });
+
     await loadRows();
   } catch (err) {
     alert(err.message);
@@ -380,16 +476,27 @@ async function handleDeleteRecord(id) {
 }
 
 async function exportCurrentTable() {
-  const data = await apiRequest(`${API_BASE}/export/${configs[entity].endpoint}`);
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${configs[entity].endpoint}.json`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+  try {
+    const data = await apiRequest(`${API_BASE}/export/${configs[entity].endpoint}`);
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json"
+    });
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+
+    a.href = url;
+    a.download = `${configs[entity].endpoint}.json`;
+
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert(err.message);
+  }
 }
 
 addRecordBtn.addEventListener("click", () => openModal("add"));
@@ -404,7 +511,8 @@ window.addEventListener("click", (e) => {
 tableBody.addEventListener("click", (e) => {
   if (e.target.classList.contains("action-edit")) {
     const id = Number(e.target.dataset.id);
-    const record = rows.find(r => Number(r[configs[entity].idField]) === id);
+    const record = rows.find((r) => Number(r[configs[entity].idField]) === id);
+
     if (record) openModal("edit", record);
   }
 
@@ -422,11 +530,23 @@ tableBody.addEventListener("click", (e) => {
   pageTitle.textContent = configs[entity].title;
   buildTableHead();
 
+  if (user.role === "student") {
+    addRecordBtn.style.display = "none";
+  }
+
   try {
     await loadLookups();
     await loadRows();
   } catch (err) {
     console.error(err);
+
+    if (err.message.includes("Invalid") || err.message.includes("expired")) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "login.html";
+      return;
+    }
+
     alert("Failed to load page data.");
   }
 })();

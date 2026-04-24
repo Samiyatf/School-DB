@@ -1,11 +1,15 @@
 const express = require("express");
 const mysql = require("mysql2/promise");
 const cors = require("cors");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+const JWT_SECRET = process.env.JWT_SECRET || "college_secret_key_123";
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST || "127.0.0.1",
@@ -15,6 +19,125 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10
 });
+
+// =========================
+// AUTH ROUTES
+// =========================
+
+app.post("/api/auth/register", async (req, res) => {
+  try {
+    const { full_name, email, password, role } = req.body;
+
+    if (!full_name || !email || !password || !role) {
+      return res.status(400).json({ error: "All fields are required" });
+    }
+
+    if (!["student", "teacher"].includes(role)) {
+      return res.status(400).json({ error: "Invalid role selected" });
+    }
+
+    const password_hash = await bcrypt.hash(password, 10);
+
+    await pool.query(
+      `INSERT INTO app_users (full_name, email, password_hash, role)
+       VALUES (?, ?, ?, ?)`,
+      [full_name, email, password_hash, role]
+    );
+
+    res.status(201).json({ message: "Account created successfully" });
+  } catch (error) {
+    console.error(error);
+
+    if (error.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({ error: "Email already exists" });
+    }
+
+    res.status(500).json({ error: "Registration failed" });
+  }
+});
+
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const [users] = await pool.query(
+      "SELECT * FROM app_users WHERE email = ?",
+      [email]
+    );
+
+    if (!users.length) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+
+    const user = users[0];
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+
+    if (!isMatch) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+
+    const token = jwt.sign(
+      {
+        user_id: user.user_id,
+        full_name: user.full_name,
+        email: user.email,
+        role: user.role
+      },
+      JWT_SECRET,
+      { expiresIn: "2h" }
+    );
+
+    res.json({
+      message: "Login successful",
+      token,
+      user: {
+        user_id: user.user_id,
+        full_name: user.full_name,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Login failed" });
+  }
+});
+
+// =========================
+// AUTH MIDDLEWARE
+// =========================
+
+function authenticateUser(req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.status(401).json({ error: "No token provided" });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch {
+    res.status(401).json({ error: "Invalid or expired token" });
+  }
+}
+
+function authorizeRoles(...allowedRoles) {
+  return (req, res, next) => {
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    next();
+  };
+}
+
+// =========================
+// ENTITY CONFIG
+// =========================
 
 const entityConfig = {
   colleges: {
@@ -27,6 +150,7 @@ const entityConfig = {
     insertValues: (b) => [b.college_name, b.location],
     updateValues: (b, id) => [b.college_name, b.location, id]
   },
+
   departments: {
     idField: "department_id",
     table: "department",
@@ -47,6 +171,7 @@ const entityConfig = {
     insertValues: (b) => [b.college_id, b.department_name],
     updateValues: (b, id) => [b.college_id, b.department_name, id]
   },
+
   students: {
     idField: "student_id",
     table: "student",
@@ -67,6 +192,7 @@ const entityConfig = {
     insertValues: (b) => [b.department_id, b.first_name, b.last_name, b.max_courses_allowed],
     updateValues: (b, id) => [b.department_id, b.first_name, b.last_name, b.max_courses_allowed, id]
   },
+
   student_accounts: {
     idField: "account_id",
     table: "student_account",
@@ -87,6 +213,7 @@ const entityConfig = {
     insertValues: (b) => [b.student_id, b.username, b.password],
     updateValues: (b, id) => [b.student_id, b.username, b.password, id]
   },
+
   instructors: {
     idField: "instructor_id",
     table: "instructor",
@@ -107,6 +234,7 @@ const entityConfig = {
     insertValues: (b) => [b.department_id, b.first_name, b.last_name],
     updateValues: (b, id) => [b.department_id, b.first_name, b.last_name, id]
   },
+
   instructor_profiles: {
     idField: "profile_id",
     table: "instructor_profile",
@@ -127,6 +255,7 @@ const entityConfig = {
     insertValues: (b) => [b.instructor_id, b.office || null, b.rank_title || null],
     updateValues: (b, id) => [b.instructor_id, b.office || null, b.rank_title || null, id]
   },
+
   courses: {
     idField: "course_id",
     table: "course",
@@ -147,6 +276,7 @@ const entityConfig = {
     insertValues: (b) => [b.department_id, b.course_title, b.credit_hours],
     updateValues: (b, id) => [b.department_id, b.course_title, b.credit_hours, id]
   },
+
   classrooms: {
     idField: "classroom_id",
     table: "classroom",
@@ -157,6 +287,7 @@ const entityConfig = {
     insertValues: (b) => [b.building_name, b.room_number, b.capacity],
     updateValues: (b, id) => [b.building_name, b.room_number, b.capacity, id]
   },
+
   sections: {
     idField: "section_id",
     table: "section",
@@ -199,6 +330,7 @@ const entityConfig = {
     insertValues: (b) => [b.course_id, b.instructor_id, b.classroom_id, b.semester, b.year],
     updateValues: (b, id) => [b.course_id, b.instructor_id, b.classroom_id, b.semester, b.year, id]
   },
+
   enrollments: {
     idField: "enrollment_id",
     table: "enrollment",
@@ -237,38 +369,41 @@ const entityConfig = {
   }
 };
 
-// lookup routes
-app.get("/api/lookups/colleges", async (req, res) => {
+// =========================
+// LOOKUP ROUTES
+// =========================
+
+app.get("/api/lookups/colleges", authenticateUser, async (req, res) => {
   const [rows] = await pool.query(`SELECT college_id, college_name FROM college ORDER BY college_name`);
   res.json(rows);
 });
 
-app.get("/api/lookups/departments", async (req, res) => {
+app.get("/api/lookups/departments", authenticateUser, async (req, res) => {
   const [rows] = await pool.query(`SELECT department_id, department_name FROM department ORDER BY department_name`);
   res.json(rows);
 });
 
-app.get("/api/lookups/students", async (req, res) => {
+app.get("/api/lookups/students", authenticateUser, async (req, res) => {
   const [rows] = await pool.query(`SELECT student_id, CONCAT(first_name, ' ', last_name) AS student_name FROM student ORDER BY first_name, last_name`);
   res.json(rows);
 });
 
-app.get("/api/lookups/instructors", async (req, res) => {
+app.get("/api/lookups/instructors", authenticateUser, async (req, res) => {
   const [rows] = await pool.query(`SELECT instructor_id, CONCAT(first_name, ' ', last_name) AS instructor_name FROM instructor ORDER BY first_name, last_name`);
   res.json(rows);
 });
 
-app.get("/api/lookups/courses", async (req, res) => {
+app.get("/api/lookups/courses", authenticateUser, async (req, res) => {
   const [rows] = await pool.query(`SELECT course_id, course_title FROM course ORDER BY course_title`);
   res.json(rows);
 });
 
-app.get("/api/lookups/classrooms", async (req, res) => {
+app.get("/api/lookups/classrooms", authenticateUser, async (req, res) => {
   const [rows] = await pool.query(`SELECT classroom_id, CONCAT(building_name, ' ', room_number) AS classroom_label FROM classroom ORDER BY building_name, room_number`);
   res.json(rows);
 });
 
-app.get("/api/lookups/sections", async (req, res) => {
+app.get("/api/lookups/sections", authenticateUser, async (req, res) => {
   const [rows] = await pool.query(`
     SELECT s.section_id, CONCAT(c.course_title, ' - ', s.semester, ' ', s.year) AS section_label
     FROM section s
@@ -278,9 +413,12 @@ app.get("/api/lookups/sections", async (req, res) => {
   res.json(rows);
 });
 
-// generic CRUD routes
+// =========================
+// GENERIC CRUD ROUTES
+// =========================
+
 for (const [entity, cfg] of Object.entries(entityConfig)) {
-  app.get(`/api/${entity}`, async (req, res) => {
+  app.get(`/api/${entity}`, authenticateUser, async (req, res) => {
     try {
       const [rows] = await pool.query(cfg.selectAll);
       res.json(rows);
@@ -290,7 +428,7 @@ for (const [entity, cfg] of Object.entries(entityConfig)) {
     }
   });
 
-  app.post(`/api/${entity}`, async (req, res) => {
+  app.post(`/api/${entity}`, authenticateUser, authorizeRoles("teacher"), async (req, res) => {
     try {
       const [result] = await pool.query(cfg.insert, cfg.insertValues(req.body));
       const [rows] = await pool.query(cfg.selectOne, [result.insertId]);
@@ -301,13 +439,15 @@ for (const [entity, cfg] of Object.entries(entityConfig)) {
     }
   });
 
-  app.put(`/api/${entity}/:id`, async (req, res) => {
+  app.put(`/api/${entity}/:id`, authenticateUser, authorizeRoles("teacher"), async (req, res) => {
     try {
       const id = req.params.id;
       const [result] = await pool.query(cfg.update, cfg.updateValues(req.body, id));
+
       if (result.affectedRows === 0) {
         return res.status(404).json({ error: "Record not found" });
       }
+
       const [rows] = await pool.query(cfg.selectOne, [id]);
       res.json(rows[0]);
     } catch (err) {
@@ -316,26 +456,40 @@ for (const [entity, cfg] of Object.entries(entityConfig)) {
     }
   });
 
-  app.delete(`/api/${entity}/:id`, async (req, res) => {
+  app.delete(`/api/${entity}/:id`, authenticateUser, authorizeRoles("teacher"), async (req, res) => {
     try {
       const id = req.params.id;
-      const [result] = await pool.query(`DELETE FROM ${cfg.table} WHERE ${cfg.idField} = ?`, [id]);
+      const [result] = await pool.query(
+        `DELETE FROM ${cfg.table} WHERE ${cfg.idField} = ?`,
+        [id]
+      );
+
       if (result.affectedRows === 0) {
         return res.status(404).json({ error: "Record not found" });
       }
+
       res.json({ message: "Deleted successfully" });
     } catch (err) {
       console.error(err);
-      res.status(500).json({ error: "Delete failed. This record may be referenced by another table." });
+      res.status(500).json({
+        error: "Delete failed. This record may be referenced by another table."
+      });
     }
   });
 }
 
-// export one table
-app.get("/api/export/:entity", async (req, res) => {
+// =========================
+// EXPORT ROUTES
+// =========================
+
+app.get("/api/export/:entity", authenticateUser, async (req, res) => {
   try {
     const cfg = entityConfig[req.params.entity];
-    if (!cfg) return res.status(404).json({ error: "Invalid export entity" });
+
+    if (!cfg) {
+      return res.status(404).json({ error: "Invalid export entity" });
+    }
+
     const [rows] = await pool.query(cfg.selectAll);
     res.json(rows);
   } catch (err) {
@@ -344,14 +498,15 @@ app.get("/api/export/:entity", async (req, res) => {
   }
 });
 
-// export all tables
-app.get("/api/export/all", async (req, res) => {
+app.get("/api/export/all", authenticateUser, async (req, res) => {
   try {
     const result = {};
+
     for (const [entity, cfg] of Object.entries(entityConfig)) {
       const [rows] = await pool.query(cfg.selectAll);
       result[entity] = rows;
     }
+
     res.json(result);
   } catch (err) {
     console.error(err);
@@ -360,6 +515,7 @@ app.get("/api/export/all", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

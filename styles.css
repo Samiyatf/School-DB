@@ -206,4 +206,48 @@ th, td {
   .sidebar {
     width: 100%;
   }
+} 
+
+
+.auth-container {
+  max-width: 420px;
+  margin: 80px auto;
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+}
+
+.auth-container h1 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.auth-container form {
+  display: grid;
+  gap: 14px;
+}
+
+.auth-container label {
+  font-weight: bold;
+}
+
+.auth-container input,
+.auth-container select {
+  padding: 12px;
+  border: 1px solid #c9d2e3;
+  border-radius: 8px;
+}
+
+.auth-container button {
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: #2f6fed;
+  color: white;
+  cursor: pointer;
+}
+
+.auth-container p {
+  text-align: center;
 }

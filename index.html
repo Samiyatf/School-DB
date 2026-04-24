@@ -13,14 +13,14 @@
       <h2>College AMS</h2>
       <nav>
         <a href="index.html" class="active">Dashboard</a>
-        <a href="manager.html?entity=colleges">Colleges</a>
-        <a href="manager.html?entity=departments">Departments</a>
+        <a href="manager.html?entity=colleges" class="teacher-only">Colleges</a>
+        <a href="manager.html?entity=departments" class="teacher-only">Departments</a>
         <a href="manager.html?entity=students">Students</a>
-        <a href="manager.html?entity=student_accounts">Student Accounts</a>
-        <a href="manager.html?entity=instructors">Instructors</a>
-        <a href="manager.html?entity=instructor_profiles">Instructor Profiles</a>
+        <a href="manager.html?entity=student_accounts" class="teacher-only">Student Accounts</a>
+        <a href="manager.html?entity=instructors" class="teacher-only">Instructors</a>
+        <a href="manager.html?entity=instructor_profiles" class="teacher-only">Instructor Profiles</a>
         <a href="manager.html?entity=courses">Courses</a>
-        <a href="manager.html?entity=classrooms">Classrooms</a>
+        <a href="manager.html?entity=classrooms" class="teacher-only">Classrooms</a>
         <a href="manager.html?entity=sections">Sections</a>
         <a href="manager.html?entity=enrollments">Enrollments</a>
       </nav>
@@ -28,41 +28,89 @@
 
     <main class="content">
       <header class="page-header">
-        <h1>Dashboard</h1>
-        <button id="exportAllBtn">Export All Data JSON</button>
+        <div>
+          <h1>Dashboard</h1>
+          <p id="welcomeText"></p>
+        </div>
+
+        <div class="header-actions">
+          <button id="exportAllBtn">Export All Data JSON</button>
+          <button id="logoutBtn">Logout</button>
+        </div>
       </header>
 
       <section class="dashboard-grid">
-        <a class="card" href="manager.html?entity=colleges">Manage Colleges</a>
-        <a class="card" href="manager.html?entity=departments">Manage Departments</a>
-        <a class="card" href="manager.html?entity=students">Manage Students</a>
-        <a class="card" href="manager.html?entity=student_accounts">Manage Student Accounts</a>
-        <a class="card" href="manager.html?entity=instructors">Manage Instructors</a>
-        <a class="card" href="manager.html?entity=instructor_profiles">Manage Instructor Profiles</a>
-        <a class="card" href="manager.html?entity=courses">Manage Courses</a>
-        <a class="card" href="manager.html?entity=classrooms">Manage Classrooms</a>
-        <a class="card" href="manager.html?entity=sections">Manage Sections</a>
-        <a class="card" href="manager.html?entity=enrollments">Manage Enrollments</a>
+        <a class="card teacher-only" href="manager.html?entity=colleges">Manage Colleges</a>
+        <a class="card teacher-only" href="manager.html?entity=departments">Manage Departments</a>
+        <a class="card" href="manager.html?entity=students">View Students</a>
+        <a class="card teacher-only" href="manager.html?entity=student_accounts">Manage Student Accounts</a>
+        <a class="card teacher-only" href="manager.html?entity=instructors">Manage Instructors</a>
+        <a class="card teacher-only" href="manager.html?entity=instructor_profiles">Manage Instructor Profiles</a>
+        <a class="card" href="manager.html?entity=courses">View Courses</a>
+        <a class="card teacher-only" href="manager.html?entity=classrooms">Manage Classrooms</a>
+        <a class="card" href="manager.html?entity=sections">View Sections</a>
+        <a class="card" href="manager.html?entity=enrollments">View Enrollments</a>
       </section>
     </main>
   </div>
 
   <script>
-    document.getElementById("exportAllBtn").addEventListener("click", async () => {
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    if (!token || !user) {
+      window.location.href = "login.html";
+    }
+
+    const welcomeText = document.getElementById("welcomeText");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const exportAllBtn = document.getElementById("exportAllBtn");
+
+    welcomeText.textContent = `Logged in as ${user.full_name} (${user.role})`;
+
+    if (user.role === "student") {
+      document.querySelectorAll(".teacher-only").forEach((element) => {
+        element.style.display = "none";
+      });
+    }
+
+    logoutBtn.addEventListener("click", () => {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "login.html";
+    });
+
+    exportAllBtn.addEventListener("click", async () => {
       try {
-        const res = await fetch("http://localhost:3000/api/export/all");
+        const res = await fetch("http://localhost:3000/api/export/all", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
         const data = await res.json();
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to export all data.");
+        }
+
+        const blob = new Blob([JSON.stringify(data, null, 2)], {
+          type: "application/json"
+        });
+
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
+
         a.href = url;
         a.download = "college_management_db_export.json";
+
         document.body.appendChild(a);
         a.click();
         a.remove();
+
         URL.revokeObjectURL(url);
       } catch (err) {
-        alert("Failed to export all data.");
+        alert(err.message);
         console.error(err);
       }
     });
