@@ -269,7 +269,15 @@ function renderTable(list) {
 
   list.forEach((row) => {
     const cells = config.columns
-      .map((col) => `<td>${escapeHtml(row[col])}</td>`)
+      .map((col) => {
+        let value = row[col];
+
+        if (entity === "enrollments" && col === "grade" && user.role === "student") {
+          value = "*";
+        }
+
+        return `<td>${escapeHtml(value)}</td>`;
+      })
       .join("");
 
     const actions =
@@ -532,6 +540,9 @@ tableBody.addEventListener("click", (e) => {
 
   if (user.role === "student") {
     addRecordBtn.style.display = "none";
+    document.querySelectorAll(".teacher-only").forEach((element) => {
+      element.style.display = "none";
+    });
   }
 
   try {
